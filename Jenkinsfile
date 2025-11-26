@@ -49,7 +49,7 @@ pipeline {
                 // SonarQube server name: "sonar" (configured in Jenkins global settings)
                 withSonarQubeEnv('sonarqube') {
                     withCredentials([
-                        string(credentialsId: 'sonartoken', variable: 'SONAR_TOKEN')
+                        string(credentialsId: 'sonar', variable: 'SONAR_TOKEN')
                     ]) {
                         sh '''
                             echo "Running SonarQube analysis..."
@@ -64,7 +64,7 @@ pipeline {
                 }
             }
         }
-        
+
         stage('quality-gate') {
             steps {
                 // Wait for SonarQube to compute Quality Gate result (via webhook)
