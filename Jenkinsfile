@@ -6,7 +6,7 @@ pipeline {
     }
 
     environment {
-        TOMCAT_HOST    = '172.31.35.219'        // Tomcat server Private or Public IP address
+        TOMCAT_HOST    = '172.31.35.219'        // Tomcat server private or public or Elastic IP address
         TOMCAT_PORT    = '8080'                    // Tomcat port where manager app is available
         APP_CONTEXT    = '/Springdemo-0.0.1-SNAPSHOT'  // Application context path for Tomcat deployment
     }
@@ -17,7 +17,7 @@ pipeline {
             steps {
                 // Clone the repo from GitHub using the 'main' branch
                 git branch: 'main',
-                    url: 'https://github.com/avizway1/awar05-jenkins.git'
+                    url: 'git@github.com:kiran7028/jenkins-pipeline.git'
             }
         }
 
@@ -54,9 +54,9 @@ pipeline {
                         echo "Deploying $WAR_FILE to Tomcat..."
 
                         # Use curl to deploy the WAR to Tomcat using Tomcat Manager
-                        curl --fail -u "$TOMCAT_USER:$TOMCAT_PASS" \   # Authenticate with Tomcat
-                          -T "$WAR_FILE" \                              # Upload WAR file
-                          "http://$TOMCAT_HOST:$TOMCAT_PORT/manager/text/deploy?path=$APP_CONTEXT&update=true"
+                        curl --fail -u "$TOMCAT_USER:$TOMCAT_PASS" /   # Authenticate with Tomcat
+                        -T "$WAR_FILE" /                              # Upload WAR file
+                        "http://$TOMCAT_HOST:$TOMCAT_PORT/manager/text/deploy?path=$APP_CONTEXT&update=true"
 
                         # Print deployment success message
                         echo "Deployment triggered. Check Tomcat logs if needed."

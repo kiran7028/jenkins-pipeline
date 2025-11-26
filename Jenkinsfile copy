@@ -1,0 +1,72 @@
+pipeline {
+    agent any
+    // Runs the pipeline on any available Jenkins agent (node)
+
+    tools {
+        maven 'maven'
+        // Declares Maven as a required tool.
+        // 'maven' must match the name configured in Jenkins Global Tool Configuration.
+        // Jenkins ensures Maven is installed and available in PATH during the build.
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                sh 'ls -la'
+                // Executes a shell command to list all files in the current workspace.
+                // Useful for debugging and verifying repo contents.
+
+                git branch: 'main', changelog: false, credentialsId: 'kiran7028-github', poll: false, url: 'git@github.com:kiran7028/jenkins-pipeline.git'
+                // Checks out code from the specified GitHub repository.
+                // - branch: 'main' → pulls the main branch.
+                // - changelog: false → disables changelog recording for this checkout.
+                // - credentialsId: 'kiran7028-github' → uses stored Jenkins credentials to authenticate.
+                // - poll: false → disables SCM polling (no automatic trigger).
+                // - url: 'https://github.com/kiran7028/aws-tasks.git' → repository location.
+            }
+        }
+
+        stage('Build') {
+            steps {
+                dir('maven-new-springboot-main') {
+                    // Changes working directory to 'maven-new-springboot-main'
+                    // (relative to the Jenkins workspace).
+
+                    sh 'ls -la'
+                    // Lists files inside that directory to confirm structure.
+
+                    echo 'Building my code with Maven'
+                    // Prints a message to the Jenkins console log.
+
+                    sh 'mvn clean package'
+                    // Runs Maven build:
+                    // - 'clean' → deletes previous build artifacts.
+                    // - 'package' → compiles code, runs unit tests, and packages into JAR/WAR.
+                }
+            }
+        }
+
+        stage('Test') {
+            steps {
+                dir('maven-new-springboot-main') {
+                    // Again, switch into the project directory.
+
+                    echo 'Test Maven'
+                    // Prints a message to indicate test stage.
+
+                    sh 'mvn test'
+                    // Runs Maven tests:
+                    // Executes unit tests defined in the project and reports results.
+                }
+            }
+        }
+    }
+    post {
+        success {
+            echo '✅ Build and tests completed successfully!'
+        }
+        failure {
+            echo '❌ Build failed. Check logs for details.'
+        }
+    }
+}
