@@ -17,7 +17,7 @@ pipeline {
             steps {
                 // Clone the repo from GitHub using the 'main' branch
                 git branch: 'main',
-                    url: 'git@github.com:kiran7028/jenkins-pipeline.git'
+                    url: 'https://github.com/kiran7028/jenkins-pipeline.git'
             }
         }
 
