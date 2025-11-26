@@ -1,6 +1,5 @@
-
-//Integrate SonarQube with jenkins for Code Quality checks
-
+// Jenkins pipeline to build, test, deploy a Maven app to Tomcat and
+//get slack notifications when deployment happened
 
 pipeline {
     agent any
@@ -10,15 +9,9 @@ pipeline {
     }
 
     environment {
-        // Tomcat details
         TOMCAT_HOST = '43.205.236.253'
         TOMCAT_PORT = '8080'
         APP_CONTEXT = '/Springdemo-0.0.1-SNAPSHOT'
-
-        // SonarQube details
-        SONAR_HOST_URL     = 'http://13.235.54.0:9000/'
-        SONAR_PROJECT_KEY  = 'myprodcode'
-        SONAR_PROJECT_NAME = 'prod-app-code'
     }
 
     stages {
@@ -44,24 +37,6 @@ pipeline {
             }
         }
 
-        stage('sonar-analysis') {
-            steps {
-                withCredentials([
-                    string(credentialsId: 'sonar', variable: 'SONAR_TOKEN')
-                ]) {
-                    sh '''
-                        echo "Running SonarQube analysis..."
-
-                        mvn org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
-                          -Dsonar.projectKey=$SONAR_PROJECT_KEY \
-                          -Dsonar.projectName=$SONAR_PROJECT_NAME \
-                          -Dsonar.host.url=$SONAR_HOST_URL \
-                          -Dsonar.token=$SONAR_TOKEN
-                    '''
-                }
-            }
-        }
-
         stage('deploy-to-tomcat') {
             steps {
                 withCredentials([
@@ -78,9 +53,9 @@ pipeline {
 
                         curl --fail -u "$TOMCAT_USER:$TOMCAT_PASS" \
                           -T "$WAR_FILE" \
-                          "http://$TOMCAT_HOST:$TOMCAT_PORT/manager/text/deploy?path=$APP_CONTEXT&update=true"
+                          "http://${TOMCAT_HOST}:${TOMCAT_PORT}/manager/text/deploy?path=${APP_CONTEXT}&update=true"
 
-                        echo "Deployment triggered at: http://$TOMCAT_HOST:$TOMCAT_PORT$APP_CONTEXT"
+                        echo "Deployment triggered to Tomcat at http://${TOMCAT_HOST}:${TOMCAT_PORT}${APP_CONTEXT}"
                     '''
                 }
             }
@@ -89,15 +64,16 @@ pipeline {
 
     post {
         success {
+            // Slack notification using Incoming Webhook stored as secret "webhook"
             withCredentials([
                 string(credentialsId: 'webhook', variable: 'SLACK_WEBHOOK_URL')
             ]) {
                 sh '''
-                    SONAR_DASHBOARD_URL="${SONAR_HOST_URL}/dashboard?id=${SONAR_PROJECT_KEY}"
+                    echo "Sending Slack success notification..."
 
                     PAYLOAD=$(cat <<EOF
 {
-  "text": "✅ *Deployment SUCCESS*\\n• Job: ${JOB_NAME}\\n• Build: #${BUILD_NUMBER}\\n• App: http://${TOMCAT_HOST}:${TOMCAT_PORT}${APP_CONTEXT}\\n• SonarQube: ${SONAR_DASHBOARD_URL}\\n• Channel: #webhook-test"
+  "text": "✅ *Deployment SUCCESS*\n• Job: ${JOB_NAME}\n• Build: #${BUILD_NUMBER}\n• App: http://${TOMCAT_HOST}:${TOMCAT_PORT}${APP_CONTEXT}\n• Channel: #webhook-test"
 }
 EOF
                     )
@@ -110,13 +86,16 @@ EOF
         }
 
         failure {
+            // Slack notification on failure
             withCredentials([
                 string(credentialsId: 'webhook', variable: 'SLACK_WEBHOOK_URL')
             ]) {
                 sh '''
+                    echo "Sending Slack failure notification..."
+
                     PAYLOAD=$(cat <<EOF
 {
-  "text": "❌ *Deployment FAILED*\\n• Job: ${JOB_NAME}\\n• Build: #${BUILD_NUMBER}\\n• Console: ${BUILD_URL}\\n• Channel: #webhook-test"
+  "text": "❌ *Deployment FAILED*\n• Job: ${JOB_NAME}\n• Build: #${BUILD_NUMBER}\n• Console: ${BUILD_URL}\n• Channel: #webhook-test"
 }
 EOF
                     )

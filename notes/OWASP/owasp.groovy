@@ -1,6 +1,4 @@
-
-//Integrate SonarQube with jenkins for Code Quality checks
-
+#OWASP require HTMLPublisher
 
 pipeline {
     agent any
@@ -11,12 +9,12 @@ pipeline {
 
     environment {
         // Tomcat details
-        TOMCAT_HOST = '43.205.236.253'
+        TOMCAT_HOST = '65.2.182.107'
         TOMCAT_PORT = '8080'
         APP_CONTEXT = '/Springdemo-0.0.1-SNAPSHOT'
 
         // SonarQube details
-        SONAR_HOST_URL     = 'http://13.235.54.0:9000/'
+        SONAR_HOST_URL     = 'http://13.203.29.187:9000/'
         SONAR_PROJECT_KEY  = 'myprodcode'
         SONAR_PROJECT_NAME = 'prod-app-code'
     }
@@ -25,7 +23,7 @@ pipeline {
         stage('checkout') {
             steps {
                 git branch: 'main',
-                    url: 'https://github.com/kiran7028/jenkins-pipeline.git'
+                    url: 'https://github.com/avizway1/awar05-jenkins.git'
             }
         }
 
@@ -43,6 +41,16 @@ pipeline {
                 sh 'mvn test'
             }
         }
+
+        stage('dependency-check') {
+            steps {
+                sh '''
+                    echo "Running OWASP Dependency-Check with autoUpdate=false (no NVD online update)..."
+                    mvn org.owasp:dependency-check-maven:10.0.4:check
+                '''
+            }
+        }
+
 
         stage('sonar-analysis') {
             steps {

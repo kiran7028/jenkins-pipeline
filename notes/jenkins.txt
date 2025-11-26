@@ -1,0 +1,384 @@
+CICD Tool : 
+
+Continuous Integration (CI) 
+Continuous Deployment / Delivery (CD)
+
+Delivery : Manaul step or action involved in the process
+Deploy : NO manaul step or action involved in the process
+
+
+2004 --> Kohsuke Kawaguchi he developed "hudson" as open source for sun-micro system.
+2010 --> Got disputes between hudson and oracle (oracle acquired sun-micro) --> They folder existing and named as jenkins
+
+Jenkins has very good community support and rich in plugins.. 
+
+---
+
+Jenkins has a pre-requisite: We should have java installed..
+
+Jenkins runs on port 8080
+
+
+sudo wget -O /etc/yum.repos.d/jenkins.repo \
+    https://pkg.jenkins.io/redhat-stable/jenkins.repo
+sudo rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
+sudo yum upgrade
+dnf install fontconfig -y
+
+dnf install java-21-amazon-corretto -y
+
+dnf install jenkins -y
+
+systemctl enable jenkins --now
+
+systemctl start jenkins
+systemctl enable jenkins
+
+===
+
+Job / Item / Pipeline : 
+
+Environment Variables: 
+
+NAME=Avinash
+echo "hello $NAME"		--> hello Avinash
+
+
+Local variable : We can define variables inside the pipeline.. It is limited this particular item.
+
+NAME=Avinash
+COURSE=Jenkins
+echo "Hello, THis is $NAME Welcome to mastering ${COURSE}"
+
+---
+
+System variable : We can define variables at Jenkins system settings.. It can be used in any of the item..
+PROJECT = DevOpsproject
+OWNER = Avinash
+
+PROJECT=JenkinsProject
+echo "hello this is for a $PROJECT and this is maintained by $OWNER"
+
+What is i overwrite a system variable with local variable.?? 
+Local variables takes affect..
+
+---
+jenkins Variable : http://13.201.177.117:8080/env-vars.html/
+
+echo "THis is a test pipeline and this build id is: $BUILD_NUMBER , THis is running in $NODE_NAME"
+
+===
+
+Build options in Jenkins:
+
+Build Periodically : Regardless of the changes happening on git, pipelene triggers periodically.
+
+Poll SCM : Peridically, based on given time it will check for code changes, during the period, if any changes occured, it will trigger the pipeline.. 
+
+GitHub hook trigger for GITScm polling : THis helps to trigger the pipeline based on commits happening on the repo.. No periodical checks..
+
+http://13.201.177.117:8080/github-webhook/
+
+
+====
+
+
+Build throttle : COnfigure buiil throttle to control
+
+Then, offload the work to newly launched ec2 instance..
+
+1. Create a directory in new Node (under "var" directory) and add permisisons (chmod 777 remotedir) use at "remote roor directory".. 
+
+2. Install "java" and "git" in node..
+
+3. while adding a new node.. Add label "dev-node" "uat-name".. usage "build that match label expression".. 
+launch via ssh --> add cred --> SSH --> GLobal --> "ec2-user" and Privatekey and add keyapir
+Not verifying host strategy..
+
+4. Now try to create or trigger an existing job and verify where its running..
+
+5. Create a new item and choode "restrict where this can run" add dev-label and test it.. 
+
+----
+
+UserManagement in Jenkins : 
+
+
+Create a user and verify the user settings.. He can do anything..
+--> Reason : under security.. "logged in user can do anything "".. 
+test "allow anonomus access"..
+test "keep me signedin".. "register"..
+
+matrix:
+Tryout.. Matrix based security.. whatever user we are adding, he should have overall read permissions""
+add user "xyz" -->  
+add user "anudeep" (should already created) --> dont give delete on joba, but give all other permisisons..
+
+
+Now, create 4 projects i.e; dev-proj1 dev-proj2, uat-proj1 and uat-proj2.. we cant achieve this using "matrix"
+
+anudeep --> devprojects
+aravind --> uatprojects
+
+to chieve this, install plugins "Role base wuthrorisation starategy"
+
+now, navigate to security.. enable "role based auth strategy"..  then we get new option under security "manage and assign role"
+
+now, create a "overall read role".. without it we cant do anything.. 
+under "manage roles" --> "read-mandatory" --> choose "overall read"
+
+naviagte to "assign roles".. "global roles"  --> add user "anudeep" --> assign "read mandatory"
+and add "aravind" user and --> assign "read mandatory"
+
+login as these users and verify nothing available.. 
+
+Now.. GO to "manage roles" --> "item roles" -->  role to add "dev-role" --> pattern "dev.*" --> then choose the permisisons.. 
+GO to "manage roles" --> "item roles" -->  role to add "uat-role" --> pattern "dev.*" --> then choose the permisisons.. 
+
+Now, navigate to "assign roles".. add user .. then user "item role" assign users with appropriate .. and test.. 
+
+---
+
+Maven Instalaltion : 
+
+dnf install java-21-amazon-corretto -y
+
+https://maven.apache.org/download.cgi
+
+tar -xvf apache-maven-3.9.11-bin.tar.gz
+sudo mv apache-maven-3.9.11 /opt/
+export M2_HOME=/opt/apache-maven-3.9.11
+export PATH=$M2_HOME/bin:$PATH
+source ~/.bashrc
+
+
+mvn archetype:generate
+
+groupid : mydemo proj
+artifact: avinash
+package : mydemo
+
+---
+
+.
+└── javasample
+    ├── pom.xml
+    └── src
+        ├── main
+        │   └── java
+        │       └── mydemoproject
+        │           └── App.java
+        └── test
+            └── java
+                └── mydemoproject
+                    └── AppTest.java
+----
+
+├── pom.xml
+├── src
+│   ├── main
+│   │   └── java
+│   │       └── mydemoproject
+│   │           └── App.java
+│   └── test
+│       └── java
+│           └── mydemoproject
+│               └── AppTest.java
+└── target
+    ├── classes
+    │   └── mydemoproject
+    │       └── App.class
+    ├── generated-sources
+    │   └── annotations
+    └── maven-status
+        └── maven-compiler-plugin
+            └── compile
+                └── default-compile
+                    ├── createdFiles.lst
+                    └── inputFiles.lst
+
+---
+mvn package : Building jar: /home/ec2-user/javasample/target/javasample-1.0-SNAPSHOT.jar
+
+.
+├── pom.xml
+├── src
+│   ├── main
+│   │   └── java
+│   │       └── mydemoproject
+│   │           └── App.java
+│   └── test
+│       └── java
+│           └── mydemoproject
+│               └── AppTest.java
+└── target
+    ├── classes
+    │   └── mydemoproject
+    │       └── App.class
+    ├── generated-sources
+    │   └── annotations
+    ├── generated-test-sources
+    │   └── test-annotations
+    ├── javasample-1.0-SNAPSHOT.jar
+    ├── maven-archiver
+    │   └── pom.properties
+    ├── maven-status
+    │   └── maven-compiler-plugin
+    │       ├── compile
+    │       │   └── default-compile
+    │       │       ├── createdFiles.lst
+    │       │       └── inputFiles.lst
+    │       └── testCompile
+    │           └── default-testCompile
+    │               ├── createdFiles.lst
+    │               └── inputFiles.lst
+    ├── surefire-reports
+    │   ├── TEST-mydemoproject.AppTest.xml
+    │   └── mydemoproject.AppTest.txt
+    └── test-classes
+        └── mydemoproject
+            └── AppTest.class
+
+---
+
+mvn install : 
+
+Installing /home/ec2-user/javasample/pom.xml to /root/.m2/repository/mydemoproject/javasample/1.0-SNAPSHOT/javasample-1.0-SNAPSHOT.pom
+[INFO] Installing /home/ec2-user/javasample/target/javasample-1.0-SNAPSHOT.jar to /root/.m2/repository/mydemoproject/javasample/1.0-SNAPSHOT/javasample-1.0-SNAPSHOT.jar
+
+
+
+mvn clean install package
+
+======
+
+
+
+downlaod and unzip the apache: 
+
+Navigate /opt and download tomcat
+
+10.1.30 and tar.gz
+
+tar -zvxf 
+ 
+Bin will have scripts.. version.sh 
+Start startup.sh to start
+
+
+
+====
+
+To perform start and stop, aleays need to navigate to bin and do it, but we can rlimanate it
+Create a softlink
+
+
+ln -s /opt/apache-tomcat-10.1.44/bin/startup.sh /usr/bin/tomcatstart
+ln -s /opt/apache-tomcat-10.1.44/bin/shutdown.sh /usr/bin/tomcatstop
+
+---
+
+Somepages are accesaable as tomcat configured to work only on that machine. Need to adjust settings
+
+find / -name context.cml
+
+and edit "manager" and "host-manager" files
+
+
+vim /opt/apache-tomcat-10.1.49/webapps/host-manager/META-INF/context.xml
+vim /opt/apache-tomcat-10.1.49/webapps/manager/META-INF/context.xml
+
+---
+
+Create a user at “conf/tomcat-users.xml” 
+
+====
+
+Copy roles, manager-gui till manager-status
+
+===
+ Try access now, should prompt login
+
+Prepare role file, then paste in conf/users.xml
+
+Under user section, paste it
+
+=== 
+
+Now we can access server status and everything 
+
+====
+
+To change port, edit “server.xml” 
+Connector port, change, if req
+
+---
+
+
+vim /opt/apache-tomcat-10.1.44/conf/tomcat-users.xml
+
+tomcat
+s3cret
+
+
+--
+
+<role rolename="manager-gui"/>
+<role rolename="manager-script"/>
+<role rolename="manager-jmx"/>
+<role rolename="manager-status"/>
+<role rolename="admin-gui"/>
+<user username="tomcat" password="Avinash" roles="manager-gui,manager-script,manager-jmx,manager-status,admin-gui"/>
+
+
+---
+
+Install "maven" and "deploy to container" plugs.. 
+Create a credentials for connecting to apache server using same user we created in "apache".. (un: tomcat, pwd: s3cret)
+Now, Copy all your code to git repo.. 
+ 
+
+----
+
+SonarQube : Its is a code quality and security analysis tool. It supports approx 30+ programing languages.. 
+We can detect security issues presented in our application code.
+
+--> Bugs
+--> Security vulnerabilities
+--> code smells (Bad coding Practices)
+--> Duplicate code
+--> test coverage issues
+
+--> Code Quality standards 
+--> Quality Gates : Set of rules we can define on our coide
+Code Coverage >80%
+No critical bugs
+No vulnerabilities
+
+
+Project : Analysis : maven --> Sonar scanner --> send results --> Sonarqube UI
+
+
+https://docs.sonarsource.com/sonarqube-server/server-installation/server-components-overview
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
