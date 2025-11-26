@@ -64,7 +64,7 @@ pipeline {
         stage('quality-gate') {
             steps {
                 // Wait for SonarQube to compute Quality Gate result (via webhook)
-                timeout(time: 10, unit: 'MINUTES') {
+                timeout(time: 5, unit: 'MINUTES') {
                     //waitForQualityGate abortPipeline: true
                     def qg = waitForQualityGate()
                     if (qg.status != 'OK') {
