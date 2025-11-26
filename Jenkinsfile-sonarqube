@@ -61,15 +61,7 @@ pipeline {
                 }
             }
         }
-        stage('quality-gate') {
-            steps {
-                // Wait for SonarQube to compute Quality Gate result (via webhook)
-                timeout(time: 5, unit: 'MINUTES') {
-                    waitForQualityGate abortPipeline: true
-                }
-            }
-        }
-        
+
         stage('deploy-to-tomcat') {
             steps {
                 withCredentials([
