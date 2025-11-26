@@ -6,7 +6,7 @@ pipeline {
     }
 
     environment {
-        TOMCAT_HOST    = '172.31.35.219'        // Tomcat server private or public or Elastic IP address
+        TOMCAT_HOST    = '43.205.236.253'        // Tomcat server private or public or Elastic IP address
         TOMCAT_PORT    = '8080'                    // Tomcat port where manager app is available
         APP_CONTEXT    = '/Springdemo-0.0.1-SNAPSHOT'  // Application context path for Tomcat deployment
     }
