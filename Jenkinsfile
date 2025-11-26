@@ -46,21 +46,25 @@ pipeline {
 
         stage('sonar-analysis') {
             steps {
-                withCredentials([
-                    string(credentialsId: 'sonar', variable: 'SONAR_TOKEN')
-                ]) {
-                    sh '''
-                        echo "Running SonarQube analysis..."
+                // SonarQube server name: "sonar" (configured in Jenkins global settings)
+                withSonarQubeEnv('sonarqube') {
+                    withCredentials([
+                        string(credentialsId: 'sonartoken', variable: 'SONAR_TOKEN')
+                    ]) {
+                        sh '''
+                            echo "Running SonarQube analysis..."
 
-                        mvn org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
-                          -Dsonar.projectKey=$SONAR_PROJECT_KEY \
-                          -Dsonar.projectName=$SONAR_PROJECT_NAME \
-                          -Dsonar.host.url=$SONAR_HOST_URL \
-                          -Dsonar.token=$SONAR_TOKEN
-                    '''
+                            mvn org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+                              -Dsonar.projectKey=$SONAR_PROJECT_KEY \
+                              -Dsonar.projectName=$SONAR_PROJECT_NAME \
+                              -Dsonar.host.url=$SONAR_HOST_URL \
+                              -Dsonar.token=$SONAR_TOKEN
+                        '''
+                    }
                 }
             }
         }
+        
         stage('quality-gate') {
             steps {
                 // Wait for SonarQube to compute Quality Gate result (via webhook)
@@ -69,7 +73,7 @@ pipeline {
                 }
             }
         }
-        
+
         stage('deploy-to-tomcat') {
             steps {
                 withCredentials([
