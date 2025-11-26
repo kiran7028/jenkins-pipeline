@@ -57,8 +57,8 @@ pipeline {
                         # Authenticate with Tomcat -> curl --fail -u "$TOMCAT_USER:$TOMCAT_PASS"
                         # Upload WAR file  -> -T "$WAR_FILE"
                         curl --fail -u "$TOMCAT_USER:$TOMCAT_PASS" \
-                         -T "$WAR_FILE" \                              
-                         "http://$TOMCAT_HOST:$TOMCAT_PORT/manager/text/deploy?path=$APP_CONTEXT&update=true"
+                          -T "$WAR_FILE" \
+                          "http://$TOMCAT_HOST:$TOMCAT_PORT/manager/text/deploy?path=$APP_CONTEXT&update=true"
 
                         # Print deployment success message
                         echo "Deployment triggered. Check Tomcat logs if needed."
