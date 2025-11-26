@@ -1,75 +1,109 @@
+// Jenkins pipeline to build, test, deploy a Maven app to Tomcat and
+//get slack notifications when deployment happened
+
 pipeline {
-    agent any                     // Run this pipeline on any available Jenkins agent/node
+    agent any
 
     tools {
-        maven 'maven'             // Use the Maven installation named "maven" (configured in Jenkins global tools)
+        maven 'maven'
     }
 
     environment {
-        TOMCAT_HOST    = '43.205.236.253'        // Tomcat server private or public or Elastic IP address
-        TOMCAT_PORT    = '8080'                    // Tomcat port where manager app is available
-        APP_CONTEXT    = '/Springdemo-0.0.1-SNAPSHOT'  // Application context path for Tomcat deployment
+        TOMCAT_HOST = '43.205.236.253'
+        TOMCAT_PORT = '8080'
+        APP_CONTEXT = '/Springdemo-0.0.1-SNAPSHOT'
     }
 
     stages {
-
         stage('checkout') {
             steps {
-                // Clone the repo from GitHub using the 'main' branch
                 git branch: 'main',
                     url: 'https://github.com/kiran7028/jenkins-pipeline.git'
-                // Checks out code from the specified GitHub repository.
-                // - branch: 'main' → pulls the main branch.
-                // - changelog: false → disables changelog recording for this checkout.
-                // - credentialsId: 'kiran7028-github' → uses stored Jenkins credentials to authenticate.
-                // - poll: false → disables SCM polling (no automatic trigger).
-                // - url: 'https://github.com/kiran7028/aws-tasks.git' → repository location.
             }
         }
 
         stage('build') {
             steps {
                 sh '''
-                    echo "Building my code using Maven..."   # Print message on console
-                    mvn clean install                       # Clean previous builds and compile + package new build
+                    echo "Building my code using Maven..."
+                    mvn clean install
                 '''
             }
         }
 
         stage('test') {
             steps {
-                sh 'mvn test'       // Run all unit tests in the project
+                sh 'mvn test'
             }
         }
 
         stage('deploy-to-tomcat') {
             steps {
-                // Bind Jenkins credentials (ID: tomcat) to environment variables
-                // TOMCAT_USER = username, TOMCAT_PASS = password
-                withCredentials([usernamePassword(
-                    credentialsId: 'tomcat',        // Credential ID stored in Jenkins
-                    usernameVariable: 'TOMCAT_USER', // Variable name for Username
-                    passwordVariable: 'TOMCAT_PASS'  // Variable name for Password
-                )]) {
-
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'tomcat',
+                        usernameVariable: 'TOMCAT_USER',
+                        passwordVariable: 'TOMCAT_PASS'
+                    )
+                ]) {
                     sh '''
                         echo "Finding WAR file..."
-                        # Pick the first .war file generated inside target/
                         WAR_FILE=$(ls target/*.war | head -n 1)
-
                         echo "Deploying $WAR_FILE to Tomcat..."
 
-                        # Use curl to deploy the WAR to Tomcat using Tomcat Manager
-                        # Authenticate with Tomcat -> curl --fail -u "$TOMCAT_USER:$TOMCAT_PASS"
-                        # Upload WAR file  -> -T "$WAR_FILE"
                         curl --fail -u "$TOMCAT_USER:$TOMCAT_PASS" \
                           -T "$WAR_FILE" \
-                          "http://$TOMCAT_HOST:$TOMCAT_PORT/manager/text/deploy?path=$APP_CONTEXT&update=true"
+                          "http://${TOMCAT_HOST}:${TOMCAT_PORT}/manager/text/deploy?path=${APP_CONTEXT}&update=true"
 
-                        # Print deployment success message
-                        echo "Deployment triggered. Check Tomcat logs if needed."
+                        echo "Deployment triggered to Tomcat at http://${TOMCAT_HOST}:${TOMCAT_PORT}${APP_CONTEXT}"
                     '''
                 }
+            }
+        }
+    }
+
+    post {
+        success {
+            // Slack notification using Incoming Webhook stored as secret "webhook"
+            withCredentials([
+                string(credentialsId: 'webhook', variable: 'SLACK_WEBHOOK_URL')
+            ]) {
+                sh '''
+                    echo "Sending Slack success notification..."
+
+                    PAYLOAD=$(cat <<EOF
+{
+  "text": "✅ *Deployment SUCCESS*\n• Job: ${JOB_NAME}\n• Build: #${BUILD_NUMBER}\n• App: http://${TOMCAT_HOST}:${TOMCAT_PORT}${APP_CONTEXT}\n• Channel: #webhook-test"
+}
+EOF
+                    )
+
+                    curl -X POST -H 'Content-type: application/json' \
+                         --data "$PAYLOAD" \
+                         "$SLACK_WEBHOOK_URL"
+                '''
+            }
+        }
+
+        failure {
+            // Slack notification on failure
+            withCredentials([
+                string(credentialsId: 'webhook', variable: 'SLACK_WEBHOOK_URL')
+            ]) {
+                sh '''
+                    echo "Sending Slack failure notification..."
+
+                    PAYLOAD=$(cat <<EOF
+{
+  "text": "❌ *Deployment FAILED*\n• Job: ${JOB_NAME}\n• Build: #${BUILD_NUMBER}\n• Console: ${BUILD_URL}\n• Channel: #webhook-test"
+}
+EOF
+                    )
+
+                    curl -X POST -H 'Content-type: application/json' \
+                         --data "$PAYLOAD" \
+                         "$SLACK_WEBHOOK_URL"
+                '''
             }
         }
     }
