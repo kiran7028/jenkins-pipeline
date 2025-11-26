@@ -18,6 +18,12 @@ pipeline {
                 // Clone the repo from GitHub using the 'main' branch
                 git branch: 'main',
                     url: 'https://github.com/kiran7028/jenkins-pipeline.git'
+                // Checks out code from the specified GitHub repository.
+                // - branch: 'main' → pulls the main branch.
+                // - changelog: false → disables changelog recording for this checkout.
+                // - credentialsId: 'kiran7028-github' → uses stored Jenkins credentials to authenticate.
+                // - poll: false → disables SCM polling (no automatic trigger).
+                // - url: 'https://github.com/kiran7028/aws-tasks.git' → repository location.
             }
         }
 
