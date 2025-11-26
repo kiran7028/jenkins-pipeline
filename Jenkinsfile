@@ -1,7 +1,3 @@
-
-//Integrate SonarQube with jenkins for Code Quality checks
-
-
 pipeline {
     agent any
 
