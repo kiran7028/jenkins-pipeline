@@ -18,7 +18,7 @@ pipeline {
 
     // --- Nexus ---
     // Base Nexus URL and repo IDs/names
-    NEXUS_URL           = 'http://65.1.144.90:8081/'
+    NEXUS_URL           = 'http://65.1.144.90:8081'
     RELEASE_REPO_ID     = 'maven-releases'     // used in <server><id> and altDeploymentRepository
     SNAPSHOT_REPO_ID    = 'maven-snapshots'
     RELEASE_REPO_NAME   = 'maven-releases'     // actual repo name in Nexus
@@ -30,7 +30,7 @@ pipeline {
     TOMCAT_APP_PATH   = '/Springdemo-0.0.1-SNAPSHOT'
 
     // --- Slack ---
-    //SLACK_CHANNEL     = '#webhook-test'
+    SLACK_CHANNEL     = '#webhook-test'
   }
 
   stages {
