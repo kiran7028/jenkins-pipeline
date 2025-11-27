@@ -18,6 +18,9 @@ pipeline {
         SONAR_HOST_URL     = 'http://65.1.144.90:9000/'
         SONAR_PROJECT_KEY  = 'myprodcode'
         SONAR_PROJECT_NAME = 'prod-app-code'
+
+        // NVD API Key for OWASP Dependency-Check
+        NVD_API_KEY = credentials('owasp-nvd-api-key')
     }
 
     stages {
@@ -46,8 +49,9 @@ pipeline {
         stage('dependency-check') {
             steps {
                 sh '''
-                    echo "Running OWASP Dependency-Check..."
-                    mvn org.owasp:dependency-check-maven:10.0.4:check
+                    echo "Running OWASP Dependency-Check...12.1.9"
+                    mvn org.owasp:dependency-check-maven:10.0.4:check \
+                      -Dnvd.api.key=$NVD_API_KEY
                 '''
             }
         }
