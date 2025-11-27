@@ -45,6 +45,9 @@ pipeline {
                         --format table \
                         --severity HIGH \
                         --output trivy-results.html
+                    
+                    echo "==========trivy-results.html=========="
+                    cat trivy-results.html
                 """
             }
         }
