@@ -65,7 +65,7 @@ trivy fs --scanners vuln,misconfig,secret \
 ---
 
 # Remote repo
-trivy repo https://github.com/avizway1/awar05-jenkins.git
+trivy repo https://github.com/kiran7028/jenkins-pipeline.git
 
 # Local repo
 trivy repo /path/to/your/repo
