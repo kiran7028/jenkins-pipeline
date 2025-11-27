@@ -1,6 +1,3 @@
-
-//Use S3 as Repository
-
 pipeline {
     agent any
 
@@ -15,12 +12,9 @@ pipeline {
         APP_CONTEXT = '/Springdemo-0.0.1-SNAPSHOT'
 
         // SonarQube details
-        SONAR_HOST_URL     = 'http://13.235.54.0:9000'
+        SONAR_HOST_URL     = 'http://13.235.54.0:9000/'
         SONAR_PROJECT_KEY  = 'myprodcode'
         SONAR_PROJECT_NAME = 'prod-app-code'
-
-        // S3 "artifactory"
-        S3_BUCKET = 'mydata-07102025'
     }
 
     stages {
@@ -48,45 +42,38 @@ pipeline {
 
         stage('sonar-analysis') {
             steps {
-                withCredentials([
-                    string(credentialsId: 'sonar', variable: 'SONAR_TOKEN')
-                ]) {
-                    sh '''
-                        echo "Running SonarQube analysis..."
+                // SonarQube server name: "sonar" (configured in Jenkins global settings)
+                withSonarQubeEnv('sonarqube') {
+                    withCredentials([
+                        string(credentialsId: 'sonar', variable: 'SONAR_TOKEN')
+                    ]) {
+                        sh '''
+                            echo "Running SonarQube analysis..."
 
-                        mvn org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
-                          -Dsonar.projectKey=$SONAR_PROJECT_KEY \
-                          -Dsonar.projectName=$SONAR_PROJECT_NAME \
-                          -Dsonar.host.url=$SONAR_HOST_URL \
-                          -Dsonar.token=$SONAR_TOKEN
-                    '''
+                            mvn org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+                              -Dsonar.projectKey=$SONAR_PROJECT_KEY \
+                              -Dsonar.projectName=$SONAR_PROJECT_NAME \
+                              -Dsonar.host.url=$SONAR_HOST_URL \
+                              -Dsonar.token=$SONAR_TOKEN
+                        '''
+                    }
                 }
             }
         }
 
-        stage('publish-artifact-to-s3') {
+        stage('quality-gate') {
             steps {
-                sh '''
-                    echo "Locating WAR file to upload to S3..."
-                    WAR_FILE=$(ls target/*.war | head -n 1)
-
-                    if [ -z "$WAR_FILE" ]; then
-                      echo "No WAR file found in target/"
-                      exit 1
-                    fi
-
-                    WAR_NAME=$(basename "$WAR_FILE")
-                    S3_KEY="prod-app-code/${BUILD_NUMBER}/${WAR_NAME}"
-
-                    echo "Uploading $WAR_FILE to s3://$S3_BUCKET/$S3_KEY ..."
-                    aws s3 cp "$WAR_FILE" "s3://$S3_BUCKET/$S3_KEY"
-
-                    echo "Artifact uploaded to S3: s3://$S3_BUCKET/$S3_KEY"
-                '''
+                // Wait for SonarQube to compute Quality Gate result (via webhook)
+                timeout(time: 5, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
+                    //def qg = waitForQualityGate()
+                    //if (qg.status != 'OK') {
+                      //  error "Pipeline aborted due to quality gate failure: ${qg.status}"
+                    //}
+                }
             }
         }
-
-        stage('deploy-to-tomcat-from-s3') {
+        stage('deploy-to-tomcat') {
             steps {
                 withCredentials([
                     usernamePassword(
@@ -96,24 +83,12 @@ pipeline {
                     )
                 ]) {
                     sh '''
-                        echo "Getting WAR name from S3 for this build..."
+                        echo "Finding WAR file..."
+                        WAR_FILE=$(ls target/*.war | head -n 1)
+                        echo "Deploying $WAR_FILE to Tomcat..."
 
-                        WAR_NAME=$(aws s3 ls "s3://$S3_BUCKET/prod-app-code/${BUILD_NUMBER}/" | awk '{print $4}' | head -n 1)
-
-                        if [ -z "$WAR_NAME" ]; then
-                          echo "No WAR found in s3://$S3_BUCKET/prod-app-code/${BUILD_NUMBER}/"
-                          exit 1
-                        fi
-
-                        S3_KEY="prod-app-code/${BUILD_NUMBER}/${WAR_NAME}"
-                        LOCAL_WAR="/tmp/${WAR_NAME}"
-
-                        echo "Downloading WAR from S3: s3://$S3_BUCKET/$S3_KEY -> $LOCAL_WAR"
-                        aws s3 cp "s3://$S3_BUCKET/$S3_KEY" "$LOCAL_WAR"
-
-                        echo "Deploying $LOCAL_WAR to Tomcat..."
                         curl --fail -u "$TOMCAT_USER:$TOMCAT_PASS" \
-                          -T "$LOCAL_WAR" \
+                          -T "$WAR_FILE" \
                           "http://$TOMCAT_HOST:$TOMCAT_PORT/manager/text/deploy?path=$APP_CONTEXT&update=true"
 
                         echo "Deployment triggered at: http://$TOMCAT_HOST:$TOMCAT_PORT$APP_CONTEXT"
@@ -133,7 +108,7 @@ pipeline {
 
                     PAYLOAD=$(cat <<EOF
 {
-  "text": "✅ *Deployment SUCCESS*\\n• Job: ${JOB_NAME}\\n• Build: #${BUILD_NUMBER}\\n• App: http://${TOMCAT_HOST}:${TOMCAT_PORT}${APP_CONTEXT}\\n• SonarQube: ${SONAR_DASHBOARD_URL}\\n• Artifact: s3://${S3_BUCKET}/prod-app-code/${BUILD_NUMBER}/\\n• Channel: #webhook-test"
+  "text": "✅ *Deployment SUCCESS*\\n• Job: ${JOB_NAME}\\n• Build: #${BUILD_NUMBER}\\n• App: http://${TOMCAT_HOST}:${TOMCAT_PORT}${APP_CONTEXT}\\n• SonarQube: ${SONAR_DASHBOARD_URL}\\n• Channel: #webhook-test"
 }
 EOF
                     )

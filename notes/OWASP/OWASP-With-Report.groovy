@@ -1,6 +1,6 @@
-#OWASP require HTMLPublisher
-#e375da58-e43c-4802-b713-134b9b9fc517
-
+//OWASP require HTMLPublisher
+//Your API Key: 
+//5feb2c5b-0600-4121-8f60-6bb184ef358f
 pipeline {
     agent any
 
@@ -10,14 +10,17 @@ pipeline {
 
     environment {
         // Tomcat details
-        TOMCAT_HOST = '43.205.211.191/'
+        TOMCAT_HOST = '172.31.35.219'
         TOMCAT_PORT = '8080'
         APP_CONTEXT = '/Springdemo-0.0.1-SNAPSHOT'
 
         // SonarQube details
-        SONAR_HOST_URL     = 'http://65.1.144.90:9000/'
+        SONAR_HOST_URL     = 'http://172.31.31.138:9000/'
         SONAR_PROJECT_KEY  = 'myprodcode'
         SONAR_PROJECT_NAME = 'prod-app-code'
+
+        // NVD API Key for OWASP Dependency-Check
+        NVD_API_KEY = credentials('owasp-nvd-api-key')
     }
 
     stages {
@@ -46,8 +49,9 @@ pipeline {
         stage('dependency-check') {
             steps {
                 sh '''
-                    echo "Running OWASP Dependency-Check..."
-                    mvn org.owasp:dependency-check-maven:10.0.4:check
+                    echo "Running OWASP Dependency-Check...12.1.9"
+                    mvn org.owasp:dependency-check-maven:12.1.9:check \
+                      -Dnvd.api.key=$NVD_API_KEY
                 '''
             }
         }
