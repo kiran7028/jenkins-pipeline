@@ -36,9 +36,9 @@ pipeline {
                     echo "===== Running Trivy Image Scan ====="
                     trivy image nginx:latest
                     
-                    trivy image nginx:latest \
+                    trivy image nginx:latest \ 
                       --format json --severity HIGH \
-                      --output trivy-results.json
+                      --output trivy-results.json \
                       --output trivy-results.html
                 """
             }
