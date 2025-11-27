@@ -15,7 +15,7 @@ pipeline {
         APP_CONTEXT = '/Springdemo-0.0.1-SNAPSHOT'
 
         // SonarQube details
-        SONAR_HOST_URL     = 'http://13.235.54.0:9000'
+        SONAR_HOST_URL     = 'http://172.31.31.138:9000'
         SONAR_PROJECT_KEY  = 'myprodcode'
         SONAR_PROJECT_NAME = 'prod-app-code'
 
