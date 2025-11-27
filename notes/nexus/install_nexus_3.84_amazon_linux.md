@@ -13,6 +13,12 @@ sudo dnf install -y java-17-amazon-corretto wget tar
 ---
 
 ## 2) Create a dedicated 'nexus' user (no home dir, no shell)
+  - Creates a system user called nexus
+  - No home directory (-M)
+  - Uses /opt/nexus as its working directory (-d)
+  - Cannot log in (-s /sbin/nologin)
+  - Intended only to run the Nexus service securely
+
 ```bash
 sudo useradd -r -M -d /opt/nexus -s /sbin/nologin nexus
 ```
@@ -35,6 +41,12 @@ sudo chown -R nexus:nexus /opt/nexus /opt/nexus-3.84.0-03 /opt/sonatype-work
 ---
 
 ## 4) Run Nexus as the 'nexus' user
+  - echo 'run_as_user="nexus"' → prints the text run_as_user="nexus"
+  - | (pipe) → sends that text as input to the next command
+  - sudo tee /opt/nexus/bin/nexus.rc → writes the text into the file /opt/nexus/bin/nexus.rc (creating it if it doesn’t exist).
+    - tee is like a “safe write” tool: it takes input and saves it to a file.
+    - sudo is needed because /opt/nexus/bin/ is a protected system directory.
+
 ```bash
 echo 'run_as_user="nexus"' | sudo tee /opt/nexus/bin/nexus.rc
 ```
@@ -81,5 +93,6 @@ sudo systemctl status nexus -l
   ```
 cat /opt/sonatype-work/nexus3/admin.password
   ```
+Kirankumar#123
 
 > Remember to **open TCP 8081** in your EC2 Security Group inbound rules.
