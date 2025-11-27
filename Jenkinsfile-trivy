@@ -30,7 +30,7 @@ pipeline {
             }
         }
 
-        stage('Trivy FS Scan') {
+        stage('Trivy Image Scan') {
             steps {
                 sh """
                     echo "===== Running Trivy Image Scan ====="
@@ -43,7 +43,6 @@ pipeline {
                 """
             }
         }
-
     }
 
     post {
