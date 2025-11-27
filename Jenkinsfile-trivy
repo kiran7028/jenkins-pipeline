@@ -9,19 +9,19 @@ pipeline {
             }
         }
 
-        stage('Trivy Scans') {
-            agent {
-                docker {
-                    image 'aquasec/trivy:latest'
-                    args '--entrypoint=""'
-                }
-            }
+        stage('Trivy FS Scan') {
             steps {
                 sh """
-                    echo "===== Trivy Filesystem Scan ====="
+                    echo "===== Running Trivy Filesystem Scan ====="
                     trivy fs .
+                """
+            }
+        }
 
-                    echo "===== Trivy Remote Repo Scan ====="
+        stage('Trivy Repo Scan') {
+            steps {
+                sh """
+                    echo "===== Running Trivy Remote Repo Scan ====="
                     trivy repo \
                       --format sarif \
                       -o trivy-report.sarif \
@@ -34,7 +34,7 @@ pipeline {
 
     post {
         always {
-            echo "Saving Trivy reports..."
+            echo "Archiving Trivy SARIF report..."
             archiveArtifacts artifacts: 'trivy-report.*', fingerprint: true
         }
     }
