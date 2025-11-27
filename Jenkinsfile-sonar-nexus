@@ -30,7 +30,7 @@ pipeline {
     TOMCAT_APP_PATH   = '/Springdemo-0.0.1-SNAPSHOT'
 
     // --- Slack ---
-    SLACK_CHANNEL     = '#webhook-test'
+    //SLACK_CHANNEL     = '#webhook-test'
   }
 
   stages {
