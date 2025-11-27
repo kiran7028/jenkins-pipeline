@@ -10,7 +10,7 @@ pipeline {
 
     environment {
         // Tomcat details
-        TOMCAT_HOST = '43.205.236.253'
+        TOMCAT_HOST = '43.205.211.191'
         TOMCAT_PORT = '8080'
         APP_CONTEXT = '/Springdemo-0.0.1-SNAPSHOT'
 
