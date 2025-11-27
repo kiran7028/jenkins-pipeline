@@ -30,6 +30,20 @@ pipeline {
             }
         }
 
+        stage('Trivy FS Scan') {
+            steps {
+                sh """
+                    echo "===== Running Trivy Image Scan ====="
+                    trivy image nginx:latest
+                    //trivy image --severity HIGH,CRITICAL nginx:latest
+                    trivy image nginx:latest \
+                      --format json --severity HIGH \
+                      --output trivy-results.json
+                      --output trivy-results.html
+                """
+            }
+        }
+
     }
 
     post {
