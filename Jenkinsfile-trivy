@@ -1,6 +1,6 @@
 pipeline {
     agent any
-
+    
     stages {
 
         stage('Checkout') {
@@ -13,7 +13,7 @@ pipeline {
             steps {
                 sh """
                     echo "===== Running Trivy Filesystem Scan ====="
-                    trivy fs .
+                    /opt/homebrew/bin/trivy fs .
                 """
             }
         }
@@ -22,7 +22,7 @@ pipeline {
             steps {
                 sh """
                     echo "===== Running Trivy Remote Repo Scan ====="
-                    trivy repo \
+                    /opt/homebrew/bin/trivy repo \
                       --format sarif \
                       -o trivy-report.sarif \
                       https://github.com/kiran7028/jenkins-pipeline.git
@@ -36,12 +36,12 @@ pipeline {
                     echo "===== Running Trivy Image Scan ====="
                     
                     
-                    trivy image nginx:latest \
+                    /opt/homebrew/bin/trivy image nginx:latest \
                         --format json \
                         --severity HIGH \
                         --output trivy-results.json
 
-                    trivy image nginx:latest \
+                    /opt/homebrew/bin/trivy image nginx:latest \
                         --format table \
                         --severity HIGH \
                         --output trivy-results.html
